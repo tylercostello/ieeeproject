@@ -27,14 +27,6 @@
 #define SCREEN_WIDTH  128
 #define SCREEN_HEIGHT 128 // Change this to 96 for 1.27" OLED.
 
-// Red is VCC 3.3V
-// Black GND
-// BLUE MOSI pin 11
-// Yellow Clock SCLK pin 13
-// Orange CS pin 5
-// Green DC pin 4
-// White RST pin 6
-
 // You can use any (4 or) 5 pins 
 #define SCLK_PIN 13
 #define MOSI_PIN 11
@@ -57,13 +49,13 @@
 #include <SPI.h>
 
 // Option 1: use any pins but a little slower
-Adafruit_SSD1351 tft = Adafruit_SSD1351(SCREEN_WIDTH, SCREEN_HEIGHT, CS_PIN, DC_PIN, MOSI_PIN, SCLK_PIN, RST_PIN);  
+//Adafruit_SSD1351 tft = Adafruit_SSD1351(SCREEN_WIDTH, SCREEN_HEIGHT, CS_PIN, DC_PIN, MOSI_PIN, SCLK_PIN, RST_PIN);  
 
 // Option 2: must use the hardware SPI pins 
 // (for UNO thats sclk = 13 and sid = 11) and pin 10 must be 
 // an output. This is much faster - also required if you want
 // to use the microSD card (see the image drawing example)
-//Adafruit_SSD1351 tft = Adafruit_SSD1351(SCREEN_WIDTH, SCREEN_HEIGHT, &SPI, CS_PIN, DC_PIN, RST_PIN);
+Adafruit_SSD1351 tft = Adafruit_SSD1351(SCREEN_WIDTH, SCREEN_HEIGHT, &SPI, CS_PIN, DC_PIN, RST_PIN);
 
 float p = 3.1415926;
 
