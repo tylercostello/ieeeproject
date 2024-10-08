@@ -45,6 +45,7 @@ void initGame() {
   ballY = SCREEN_HEIGHT / 2;
   leftPaddleY = SCREEN_HEIGHT / 2 - paddleHeight / 2;
   rightPaddleY = SCREEN_HEIGHT / 2 - paddleHeight / 2;
+  drawScore();
 }
 
 // Function to draw the paddles and ball
@@ -151,7 +152,7 @@ void loop() {
   drawBall(ballX, ballY, BALL_COLOR);
 
   // Redraw the score without flickering (since it doesn't change frequently)
-  drawScore();
+  
 
   // Delay to control the frame rate
   delay(20);
