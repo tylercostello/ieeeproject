@@ -27,6 +27,14 @@
 #define SCREEN_WIDTH  128
 #define SCREEN_HEIGHT 128 // Change this to 96 for 1.27" OLED.
 
+// Red is VCC 3.3V
+// Black GND
+// BLUE MOSI pin 11
+// Yellow Clock SCLK pin 13
+// Orange CS pin 5
+// Green DC pin 4
+// White RST pin 6
+
 // You can use any (4 or) 5 pins 
 #define SCLK_PIN 13
 #define MOSI_PIN 11
