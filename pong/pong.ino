@@ -91,7 +91,6 @@ void movePaddles() {
   if (rightPaddleY < 20) rightPaddleY = 20;
   if (rightPaddleY > SCREEN_HEIGHT - paddleHeight) rightPaddleY = SCREEN_HEIGHT - paddleHeight;
 }
-
 void updateBall() {
   ballX += ballSpeedX;
   ballY += ballSpeedY;
@@ -101,15 +100,18 @@ void updateBall() {
     ballSpeedY = -ballSpeedY;
   }
 
-  // Check for collisions with the paddles
+  // Check for collisions with the left paddle
   if (ballX - ballRadius <= leftPaddleX + paddleWidth && ballY >= leftPaddleY && ballY <= leftPaddleY + paddleHeight) {
-    ballSpeedX = -ballSpeedX;  // Ball bounces off left paddle
-    ballSpeedY = random(-4, 4);
-    
+    ballSpeedX = abs(ballSpeedX);  // Ensure ball moves to the right
+    ballSpeedY = random(-4, 4);  // Add some randomness to the bounce
+    ballX = leftPaddleX + paddleWidth + ballRadius;  // Prevent the ball from getting stuck
   }
+
+  // Check for collisions with the right paddle
   if (ballX + ballRadius >= rightPaddleX && ballY >= rightPaddleY && ballY <= rightPaddleY + paddleHeight) {
-    ballSpeedX = -ballSpeedX;  // Ball bounces off right paddle
-    ballSpeedY = random(-4, 4);
+    ballSpeedX = -abs(ballSpeedX);  // Ensure ball moves to the left
+    ballSpeedY = random(-4, 4);  // Add some randomness to the bounce
+    ballX = rightPaddleX - ballRadius;  // Prevent the ball from getting stuck
   }
 
   // Check if the ball goes out of bounds
@@ -121,6 +123,7 @@ void updateBall() {
     initGame();    // Reset ball and paddles
   }
 }
+
 
 void setup() {
   Serial.begin(9600);
