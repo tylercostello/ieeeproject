@@ -27,19 +27,35 @@ Adafruit_SSD1351 tft = Adafruit_SSD1351(SCREEN_WIDTH, SCREEN_HEIGHT, &SPI, CS_PI
 int grid[GRID_HEIGHT][GRID_WIDTH] = {0}; // 0=empty, 1=filled
 int currentTetromino[4][4];              // Current tetromino
 int tetrominoX = 3, tetrominoY = 0;      // Starting position of tetromino
+int prevTetrominoX = 3;                  // Previous tetromino position
+int prevTetrominoY = 0;
+int prevTetromino[4][4] = {0};           // Previous tetromino shape
 int score = 0;
 bool gameOver = false;
 
 // Tetromino shapes (I, O, T, L, J, Z, S)
 const int tetrominoShapes[7][4][4] = {
   { {1, 1, 1, 1}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0} }, // I
-  { {1, 1}, {1, 1} },                                          // O
-  { {0, 1, 0}, {1, 1, 1}, {0, 0, 0} },                         // T
-  { {1, 0, 0}, {1, 1, 1}, {0, 0, 0} },                         // L
-  { {0, 0, 1}, {1, 1, 1}, {0, 0, 0} },                         // J
-  { {1, 1, 0}, {0, 1, 1}, {0, 0, 0} },                         // Z
-  { {0, 1, 1}, {1, 1, 0}, {0, 0, 0} }                          // S
+  { {1, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0} }, // O
+  { {0, 1, 0, 0}, {1, 1, 1, 0}, {0, 0, 0, 0}, {0, 0, 0, 0} }, // T
+  { {1, 0, 0, 0}, {1, 1, 1, 0}, {0, 0, 0, 0}, {0, 0, 0, 0} }, // L
+  { {0, 0, 1, 0}, {1, 1, 1, 0}, {0, 0, 0, 0}, {0, 0, 0, 0} }, // J
+  { {1, 1, 0, 0}, {0, 1, 1, 0}, {0, 0, 0, 0}, {0, 0, 0, 0} }, // Z
+  { {0, 1, 1, 0}, {1, 1, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0} }  // S
 };
+
+// Function prototypes
+void initGame();
+void spawnTetromino();
+void drawGrid();
+void moveDown();
+void moveLeft();
+void moveRight();
+void rotateTetromino();
+bool checkCollision();
+void lockTetromino();
+void checkLines();
+void drawScore();
 
 // Function to initialize the game
 void initGame() {
@@ -52,7 +68,16 @@ void initGame() {
   
   score = 0;
   gameOver = false;
+  
+  // Clear the screen once at the start
+  tft.fillScreen(BLACK);
+  
   spawnTetromino();
+  // Initialize previous position
+  prevTetrominoX = tetrominoX;
+  prevTetrominoY = tetrominoY;
+  memcpy(prevTetromino, currentTetromino, sizeof(prevTetromino));
+  
   drawGrid();
   drawScore();
 }
@@ -76,13 +101,17 @@ void spawnTetromino() {
 
 // Function to draw the grid and tetrominoes
 void drawGrid() {
-  tft.fillScreen(BLACK);
-  
-  // Draw the grid blocks
-  for (int y = 0; y < GRID_HEIGHT; y++) {
-    for (int x = 0; x < GRID_WIDTH; x++) {
-      if (grid[y][x] == 1) {
-        tft.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE, TETROMINO_COLOR);
+  // Erase the previous tetromino position
+  for (int y = 0; y < 4; y++) {
+    for (int x = 0; x < 4; x++) {
+      if (prevTetromino[y][x] == 1) {
+        int screenX = (prevTetrominoX + x) * BLOCK_SIZE;
+        int screenY = (prevTetrominoY + y) * BLOCK_SIZE;
+        // Only erase if there's no locked block in this position
+        if (prevTetrominoY + y < GRID_HEIGHT && prevTetrominoX + x < GRID_WIDTH &&
+            grid[prevTetrominoY + y][prevTetrominoX + x] == 0) {
+          tft.fillRect(screenX, screenY, BLOCK_SIZE, BLOCK_SIZE, BLACK);
+        }
       }
     }
   }
@@ -91,10 +120,17 @@ void drawGrid() {
   for (int y = 0; y < 4; y++) {
     for (int x = 0; x < 4; x++) {
       if (currentTetromino[y][x] == 1) {
-        tft.fillRect((tetrominoX + x) * BLOCK_SIZE, (tetrominoY + y) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE, TETROMINO_COLOR);
+        int screenX = (tetrominoX + x) * BLOCK_SIZE;
+        int screenY = (tetrominoY + y) * BLOCK_SIZE;
+        tft.fillRect(screenX, screenY, BLOCK_SIZE, BLOCK_SIZE, TETROMINO_COLOR);
       }
     }
   }
+
+  // Store the current position and shape for next update
+  prevTetrominoX = tetrominoX;
+  prevTetrominoY = tetrominoY;
+  memcpy(prevTetromino, currentTetromino, sizeof(prevTetromino));
 }
 
 // Function to move the tetromino down
@@ -130,25 +166,32 @@ void moveRight() {
 // Function to rotate the tetromino
 void rotateTetromino() {
   int temp[4][4] = {0};
+  
+  // Perform rotation
   for (int y = 0; y < 4; y++) {
     for (int x = 0; x < 4; x++) {
       temp[x][3 - y] = currentTetromino[y][x];
     }
   }
   
+  // Save current state in case we need to revert
+  int tempX = tetrominoX;
+  int tempY = tetrominoY;
+  int tempShape[4][4];
+  memcpy(tempShape, currentTetromino, sizeof(tempShape));
+  
+  // Apply rotation
   memcpy(currentTetromino, temp, sizeof(temp));
   
+  // Check if rotation is valid
   if (checkCollision()) {
-    // Undo rotation if it causes a collision
-    for (int y = 0; y < 4; y++) {
-      for (int x = 0; x < 4; x++) {
-        temp[3 - x][y] = currentTetromino[y][x];
-      }
-    }
-    memcpy(currentTetromino, temp, sizeof(temp));
+    // Revert if invalid
+    tetrominoX = tempX;
+    tetrominoY = tempY;
+    memcpy(currentTetromino, tempShape, sizeof(currentTetromino));
+  } else {
+    drawGrid();
   }
-  
-  drawGrid();
 }
 
 // Function to check for collisions
@@ -160,7 +203,8 @@ bool checkCollision() {
         int newY = tetrominoY + y;
         
         // Check for out-of-bounds or collision with other blocks
-        if (newX < 0 || newX >= GRID_WIDTH || newY >= GRID_HEIGHT || grid[newY][newX] == 1) {
+        if (newX < 0 || newX >= GRID_WIDTH || newY >= GRID_HEIGHT || 
+            (newY >= 0 && grid[newY][newX] == 1)) {
           return true;
         }
       }
@@ -174,7 +218,17 @@ void lockTetromino() {
   for (int y = 0; y < 4; y++) {
     for (int x = 0; x < 4; x++) {
       if (currentTetromino[y][x] == 1) {
-        grid[tetrominoY + y][tetrominoX + x] = 1;
+        int gridY = tetrominoY + y;
+        int gridX = tetrominoX + x;
+        if (gridY >= 0 && gridY < GRID_HEIGHT && gridX >= 0 && gridX < GRID_WIDTH) {
+          grid[gridY][gridX] = 1;
+          // Draw the locked block
+          tft.fillRect(gridX * BLOCK_SIZE, 
+                      gridY * BLOCK_SIZE, 
+                      BLOCK_SIZE, 
+                      BLOCK_SIZE, 
+                      TETROMINO_COLOR);
+        }
       }
     }
   }
@@ -184,9 +238,10 @@ void lockTetromino() {
 
 // Function to check and clear full lines
 void checkLines() {
-  for (int y = 0; y < GRID_HEIGHT; y++) {
+  for (int y = GRID_HEIGHT - 1; y >= 0; y--) {
     bool fullLine = true;
     
+    // Check if line is full
     for (int x = 0; x < GRID_WIDTH; x++) {
       if (grid[y][x] == 0) {
         fullLine = false;
@@ -195,19 +250,34 @@ void checkLines() {
     }
     
     if (fullLine) {
-      // Clear the line and shift everything down
+      // Clear the line visually
+      tft.fillRect(0, y * BLOCK_SIZE, GRID_WIDTH * BLOCK_SIZE, BLOCK_SIZE, BLACK);
+      
+      // Shift everything down
       for (int newY = y; newY > 0; newY--) {
         for (int x = 0; x < GRID_WIDTH; x++) {
           grid[newY][x] = grid[newY - 1][x];
+          // Update the display
+          if (grid[newY][x] == 1) {
+            tft.fillRect(x * BLOCK_SIZE, newY * BLOCK_SIZE, 
+                        BLOCK_SIZE, BLOCK_SIZE, TETROMINO_COLOR);
+          } else {
+            tft.fillRect(x * BLOCK_SIZE, newY * BLOCK_SIZE, 
+                        BLOCK_SIZE, BLOCK_SIZE, BLACK);
+          }
         }
       }
+      
+      // Clear the top line
       for (int x = 0; x < GRID_WIDTH; x++) {
         grid[0][x] = 0;
       }
       
-      // Increase the score
       score++;
       drawScore();
+      
+      // Check the same line again as lines might have shifted down
+      y++;
     }
   }
 }
@@ -222,29 +292,28 @@ void drawScore() {
   tft.print(score);
 }
 
-// Function to setup the game environment
 void setup() {
   Serial.begin(9600);
   tft.begin();
-  tft.fillScreen(BLACK);
   randomSeed(analogRead(0));
-  
   initGame();
 }
 
-// Main game loop
 void loop() {
   if (!gameOver) {
     // Move the tetromino down at regular intervals
     static unsigned long lastUpdateTime = 0;
-    if (millis() - lastUpdateTime >= 500) { // Move down every 500ms
+    unsigned long currentTime = millis();
+    
+    if (currentTime - lastUpdateTime >= 500) { // Move down every 500ms
       moveDown();
-      lastUpdateTime = millis();
+      lastUpdateTime = currentTime;
     }
 
-    // Basic controls (Assuming using buttons or a keypad)
-    // Here you should replace with your actual button reading code
-    int move = random(0,3);
+    // Check for button inputs
+    // Replace these with your actual button pins and logic
+    
+    int move = random(0,100000);
     
     if (move == 0) {
       moveLeft();
@@ -255,26 +324,10 @@ void loop() {
     else if (move == 2) {
       rotateTetromino();
     }
-
-    /*
-    if (digitalRead(LEFT_BUTTON_PIN) == HIGH) {
-      moveLeft();
-    }
-    if (digitalRead(RIGHT_BUTTON_PIN) == HIGH) {
-      moveRight();
-    }
-    if (digitalRead(ROTATE_BUTTON_PIN) == HIGH) {
-      rotateTetromino();
-    }
-    if (digitalRead(DOWN_BUTTON_PIN) == HIGH) {
-      moveDown();
-    }*/
-    //rotateTetromino();
     
-    // Draw everything
-    drawGrid();
   } else {
-    // Handle game over (display message, reset, etc.)
+    // Game Over screen
+    tft.fillScreen(BLACK);
     tft.setCursor(20, 50);
     tft.setTextColor(WHITE);
     tft.setTextSize(2);
@@ -282,7 +335,7 @@ void loop() {
     tft.setCursor(20, 70);
     tft.print("Score: ");
     tft.print(score);
-    delay(2000);  // Pause for a moment before resetting
+    delay(2000);  // Pause before restarting
     initGame();
   }
 }
