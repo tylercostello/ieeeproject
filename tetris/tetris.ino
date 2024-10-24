@@ -307,6 +307,7 @@ void loop() {
     
     if (currentTime - lastUpdateTime >= 500) { // Move down every 500ms
       moveDown();
+      drawScore();
       lastUpdateTime = currentTime;
     }
 
@@ -317,12 +318,15 @@ void loop() {
     
     if (move == 0) {
       moveLeft();
+      drawScore();
     }
     else if (move == 1) {
       moveRight();
+      drawScore();
     }
     else if (move == 2) {
       rotateTetromino();
+      drawScore();
     }
     
   } else {
