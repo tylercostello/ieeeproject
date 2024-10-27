@@ -15,6 +15,22 @@
 #define WHITE 0xFFFF
 #define BACKGROUND_COLOR 0x0000 // Black
 
+const int buttonLeftPin = 7;
+const int buttonRightPin = 8;
+const int buttonRotatePin = 9;
+const int buttonDownPin = 10;
+
+// Variables to store button states
+int buttonLeftState = 0;
+int buttonRightState = 0;
+int buttonRotateState = 0;
+int buttonDownState = 0;
+
+int lastButtonLeftState = HIGH;
+int lastButtonRightState = HIGH;
+int lastButtonRotateState = HIGH;
+int lastButtonDownState = HIGH;
+
 Adafruit_SSD1351 tft = Adafruit_SSD1351(SCREEN_WIDTH, SCREEN_HEIGHT, &SPI, CS_PIN, DC_PIN, RST_PIN);
 
 // Tetris grid dimensions
@@ -310,6 +326,10 @@ void drawScore() {
 
 // Main setup function
 void setup() {
+  pinMode(buttonLeftPin, INPUT_PULLUP);
+  pinMode(buttonRightPin, INPUT_PULLUP);
+  pinMode(buttonRotatePin, INPUT_PULLUP);
+  pinMode(buttonDownPin, INPUT_PULLUP);
   Serial.begin(9600);
   tft.begin();
   randomSeed(analogRead(0));
@@ -331,6 +351,45 @@ void loop() {
 
     // Check for button inputs
     // Replace these with your actual button pins and logic
+  buttonLeftState = digitalRead(buttonLeftPin);
+  buttonRightState = digitalRead(buttonRightPin);
+  buttonRotateState = digitalRead(buttonRotatePin);
+  buttonDownState = digitalRead(buttonDownPin);
+
+  if (buttonLeftState == LOW && lastButtonLeftState == HIGH) {
+    Serial.println("Left button pressed");
+    moveLeft();
+    drawScore();
+  }
+
+  // Check if the Right button was pressed (HIGH to LOW transition)
+  if (buttonRightState == LOW && lastButtonRightState == HIGH) {
+    Serial.println("Right button pressed");
+    moveRight();
+    drawScore();
+  }
+
+  // Check if the Rotate button was pressed (HIGH to LOW transition)
+  if (buttonRotateState == LOW && lastButtonRotateState == HIGH) {
+    Serial.println("Rotate button pressed");
+    rotateTetromino();
+    drawScore();
+  }
+
+  // Check if the Down button was pressed (HIGH to LOW transition)
+  if (buttonDownState == LOW && lastButtonDownState == HIGH) {
+    Serial.println("Down button pressed");
+    moveDown(); // Assuming you have a function for moving down
+    drawScore();
+  }
+
+  // Update the previous button states for the next loop
+  lastButtonLeftState = buttonLeftState;
+  lastButtonRightState = buttonRightState;
+  lastButtonRotateState = buttonRotateState;
+  lastButtonDownState = buttonDownState;
+  delay(50);
+    /*
 
     int move = random(0,100000);
 
@@ -346,8 +405,9 @@ void loop() {
       rotateTetromino();
       drawScore();
     }
+    */
 
-  } else {
+ } else {
     // Game Over screen
     tft.fillScreen(BLACK);
     tft.setCursor(20, 50);
@@ -357,7 +417,17 @@ void loop() {
     tft.setCursor(20, 70);
     tft.print("Score: ");
     tft.print(score);
-    delay(2000);  // Pause before restarting
-    initGame();
-  }
+
+    // Wait until any button is pressed to restart
+    while (true) {
+        // Check if any button is pressed
+        if (digitalRead(buttonLeftPin) == LOW || digitalRead(buttonRightPin) == LOW || 
+            digitalRead(buttonRotatePin) == LOW || digitalRead(buttonDownPin) == LOW) {
+            delay(200); // Debounce delay to avoid accidental multiple restarts
+            initGame();
+            break;  // Exit the loop and restart the game
+        }
+        delay(10);  // Small delay to prevent excessive CPU usage
+    }
+}
 }
