@@ -72,6 +72,9 @@ const uint16_t tetrominoColors[7] = {
   0x07E0  // Green for S
 };
 
+int nextTetromino[4][4] = {0};
+uint16_t nextColor;
+
 // Function prototypes
 void initGame();
 void spawnTetromino();
@@ -93,41 +96,70 @@ void initGame() {
       grid[y][x] = 0;
     }
   }
-  
+
   score = 0;
   gameOver = false;
-  
-  // Clear the screen once at the start
-  tft.fillScreen(BLACK);
-  
-  spawnTetromino();
-  // Initialize previous position
-  prevTetrominoX = tetrominoX;
-  prevTetrominoY = tetrominoY;
-  memcpy(prevTetromino, currentTetromino, sizeof(prevTetromino));
-  
-  drawGrid();
-  drawScore();
-}
 
-// Function to spawn a new tetromino
-void spawnTetromino() {
-  // Pick a random tetromino shape
+  tft.fillScreen(BLACK);
+
+  // Initialize the next Tetromino
   int shapeIndex = random(0, 7);
-  
-  // Set the color for the current tetromino
-  currentColor = tetrominoColors[shapeIndex];
-  
-  // Copy the shape to the current tetromino
-  memset(currentTetromino, 0, sizeof(currentTetromino));
+  nextColor = tetrominoColors[shapeIndex];
+  memset(nextTetromino, 0, sizeof(nextTetromino));
   for (int y = 0; y < 4; y++) {
     for (int x = 0; x < 4; x++) {
-      currentTetromino[y][x] = tetrominoShapes[shapeIndex][y][x];
+      nextTetromino[y][x] = tetrominoShapes[shapeIndex][y][x];
     }
   }
-  
+
+  spawnTetromino();
+  drawGrid();
+  drawScore();
+  drawNextTetromino();
+}
+// Function to spawn a new tetromino
+void spawnTetromino() {
+  // Copy nextTetromino as the new current Tetromino
+  memcpy(currentTetromino, nextTetromino, sizeof(currentTetromino));
+  currentColor = nextColor;
+
   tetrominoX = 3;
   tetrominoY = 0;
+
+  // Pick a new random tetromino shape for the next preview
+  int shapeIndex = random(0, 7);
+  nextColor = tetrominoColors[shapeIndex];
+
+  memset(nextTetromino, 0, sizeof(nextTetromino));
+  for (int y = 0; y < 4; y++) {
+    for (int x = 0; x < 4; x++) {
+      nextTetromino[y][x] = tetrominoShapes[shapeIndex][y][x];
+    }
+  }
+
+  // Draw the next Tetromino on the side
+  drawNextTetromino();
+}
+void drawNextTetromino() {
+  // Clear the preview area
+  tft.fillRect(80, 40, 40, 40, BLACK); // Adjust position and size as needed
+
+  // Draw the next Tetromino blocks in a 4x4 grid
+  for (int y = 0; y < 4; y++) {
+    for (int x = 0; x < 4; x++) {
+      if (nextTetromino[y][x] == 1) {
+        int screenX = 80 + x * BLOCK_SIZE; // Adjust X offset for preview area
+        int screenY = 40 + y * BLOCK_SIZE; // Adjust Y offset for preview area
+        tft.fillRect(screenX, screenY, BLOCK_SIZE, BLOCK_SIZE, nextColor);
+      }
+    }
+  }
+
+  // Optional: Label the preview area
+  tft.setCursor(80, 20);
+  tft.setTextColor(WHITE);
+  tft.setTextSize(1);
+  tft.print("Next:");
 }
 
 // Function to draw the grid and tetrominoes
