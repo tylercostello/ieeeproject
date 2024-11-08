@@ -13,6 +13,7 @@
 
 #define BLACK 0x0000
 #define WHITE 0xFFFF
+#define GRAY 0x4208
 #define BACKGROUND_COLOR 0x0000 // Black
 
 const int buttonLeftPin = 12;
@@ -130,14 +131,14 @@ void spawnTetromino() {
 }
 
 // Function to draw the grid and tetrominoes
+// Function to draw the grid, border, and tetrominoes
 void drawGrid() {
-  // Erase the previous tetromino position
+  // Clear previous tetromino position
   for (int y = 0; y < 4; y++) {
     for (int x = 0; x < 4; x++) {
       if (prevTetromino[y][x] == 1) {
         int screenX = (prevTetrominoX + x) * BLOCK_SIZE;
         int screenY = (prevTetrominoY + y) * BLOCK_SIZE;
-        // Only erase if there's no locked block in this position
         if (prevTetrominoY + y < GRID_HEIGHT && prevTetrominoX + x < GRID_WIDTH &&
             grid[prevTetrominoY + y][prevTetrominoX + x] == 0) {
           tft.fillRect(screenX, screenY, BLOCK_SIZE, BLOCK_SIZE, BLACK);
@@ -146,7 +147,20 @@ void drawGrid() {
     }
   }
 
-  // Draw the current tetromino
+  // Draw grid pattern
+  for (int x = 0; x <= GRID_WIDTH; x++) {
+    int lineX = x * BLOCK_SIZE;
+    tft.drawFastVLine(lineX, 0, GRID_HEIGHT * BLOCK_SIZE, GRAY);  // Vertical grid lines
+  }
+  for (int y = 0; y <= GRID_HEIGHT; y++) {
+    int lineY = y * BLOCK_SIZE;
+    tft.drawFastHLine(0, lineY, GRID_WIDTH * BLOCK_SIZE, GRAY);   // Horizontal grid lines
+  }
+
+  // Right border
+  tft.drawFastVLine(GRID_WIDTH * BLOCK_SIZE, 0, GRID_HEIGHT * BLOCK_SIZE, GRAY);
+
+  // Draw current tetromino
   for (int y = 0; y < 4; y++) {
     for (int x = 0; x < 4; x++) {
       if (currentTetromino[y][x] == 1) {
@@ -157,11 +171,12 @@ void drawGrid() {
     }
   }
 
-  // Store the current position and shape for next update
+  // Store current position and shape for the next update
   prevTetrominoX = tetrominoX;
   prevTetrominoY = tetrominoY;
   memcpy(prevTetromino, currentTetromino, sizeof(prevTetromino));
 }
+
 
 // Remaining functions (moveDown, moveLeft, moveRight, etc.) remain the same.
 // You may now run the code with the added functionality of tetrominoes having different colors.
@@ -316,8 +331,8 @@ void checkLines() {
 
 // Function to draw the score
 void drawScore() {
-  tft.fillRect(0, 0, SCREEN_WIDTH, 10, BLACK);  // Clear score area
-  tft.setCursor(5, 5);
+  tft.fillRect(70, 5, SCREEN_WIDTH, 10, BLACK);  // Clear score area
+  tft.setCursor(75, 5);
   tft.setTextColor(WHITE);
   tft.setTextSize(1);
   tft.print("Score: ");
