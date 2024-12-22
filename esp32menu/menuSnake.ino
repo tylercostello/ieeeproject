@@ -19,6 +19,7 @@ int foodX, foodY; // Food position
 int direction = 2; // 0=up, 1=down, 2=right, 3=left
 int score = 0;     // Player score
 
+
 void initSnakeGame() {
     // Initialize snake starting position
     for (int i = 0; i < 100; i++) {
@@ -134,6 +135,7 @@ void checkSelfCollision() {
 void runSnakeGame() {
     initSnakeGame(); // Initialize the game state
     while (true) {
+        
         // Clear previous positions
         for (int i = 0; i < snakeLength; i++) {
             tft.fillRect(snakeX[i], snakeY[i], snakeSize, snakeSize, BLACK);
@@ -151,7 +153,11 @@ void runSnakeGame() {
         drawFood();
 
         // Exit to menu on button press
-        if (digitalRead(buttonMenuPin) == LOW) break;
+        if (digitalRead(buttonMenuPin) == LOW) {
+          break;
+        }
+        
+        
 
         delay(100); // Control game speed
     }

@@ -67,7 +67,7 @@ void loop() {
         menuIndex = (menuIndex + 1) % menuItemCount;
         drawMenu();
         delay(200);
-    } else if (digitalRead(buttonMenuPin) == LOW && lastMenuButtonState == HIGH) {
+    } else if (digitalRead(buttonRightPin) == LOW && lastMenuButtonState == HIGH) {
         tft.fillScreen(BLACK);
         delay(200);
         if (menuIndex == 0) {
@@ -78,5 +78,5 @@ void loop() {
         
         drawMenu();
     }
-    lastMenuButtonState = digitalRead(buttonMenuPin);
+    lastMenuButtonState = digitalRead(buttonRightPin);
 }
