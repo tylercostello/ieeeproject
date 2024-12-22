@@ -40,7 +40,7 @@ void initSnakeGame() {
 
     // Reset score
     score = 0;
-    drawScore();
+    drawSnakeScore();
 }
 
 void spawnFood() {
@@ -109,11 +109,11 @@ void checkFoodCollision() {
         // Increase score and spawn new food
         score++;
         spawnFood();
-        drawScore();
+        drawSnakeScore();
     }
 }
 
-void drawScore() {
+void drawSnakeScore() {
     tft.fillRect(0, 0, tft.width(), 15, BLACK); // Clear score area
     tft.setCursor(5, 5);
     tft.setTextColor(SCORE_COLOR);
