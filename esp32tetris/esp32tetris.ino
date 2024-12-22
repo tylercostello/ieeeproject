@@ -20,6 +20,7 @@ const int buttonLeftPin = 12;
 const int buttonRightPin = 14;
 const int buttonRotatePin = 32;
 const int buttonDownPin = 33;
+const int menuPin = 35;
 
 // Variables to store button states
 int buttonLeftState = 0;
@@ -377,6 +378,7 @@ void setup() {
   pinMode(buttonRightPin, INPUT_PULLUP);
   pinMode(buttonRotatePin, INPUT_PULLUP);
   pinMode(buttonDownPin, INPUT_PULLUP);
+  pinMode(menuPin, INPUT_PULLUP);
   Serial.begin(9600);
   tft.begin();
   randomSeed(analogRead(0));
