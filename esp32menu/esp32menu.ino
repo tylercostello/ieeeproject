@@ -12,7 +12,6 @@
 #define CS_PIN 26
 #define RST_PIN 27
 
-
 const int buttonLeftPin = 12;
 const int buttonRightPin = 14;
 const int buttonUpPin = 32;
@@ -26,8 +25,8 @@ Adafruit_SSD1351 tft = Adafruit_SSD1351(SCREEN_WIDTH, SCREEN_HEIGHT, &SPI, CS_PI
 
 // Menu variables
 int menuIndex = 0;
-const char *menuItems[] = {"Snake", "Pong"};
-const int menuItemCount = 2;
+const char *menuItems[] = {"Snake", "Pong", "Tetris"};
+const int menuItemCount = 3;
 
 int lastMenuButtonState = HIGH;
 
@@ -36,9 +35,14 @@ extern void runSnakeGame();
 
 // Pong game header
 extern void runPongGame();
-void drawMenu() {
+
+extern void runTetrisGame();
+
+void drawMenu()
+{
     tft.fillScreen(BLACK);
-    for (int i = 0; i < menuItemCount; i++) {
+    for (int i = 0; i < menuItemCount; i++)
+    {
         tft.setCursor(20, 30 + i * 20);
         tft.setTextColor(i == menuIndex ? WHITE : 0x7BEF); // Highlight selected item
         tft.setTextSize(2);
@@ -46,7 +50,8 @@ void drawMenu() {
     }
 }
 
-void setup() {
+void setup()
+{
     pinMode(buttonUpPin, INPUT_PULLUP);
     pinMode(buttonDownPin, INPUT_PULLUP);
     pinMode(buttonLeftPin, INPUT_PULLUP);
@@ -58,24 +63,37 @@ void setup() {
     drawMenu();
 }
 
-void loop() {
-    if (digitalRead(buttonUpPin) == LOW) {
+void loop()
+{
+    if (digitalRead(buttonUpPin) == LOW)
+    {
         menuIndex = (menuIndex - 1 + menuItemCount) % menuItemCount;
         drawMenu();
         delay(200);
-    } else if (digitalRead(buttonDownPin) == LOW) {
+    }
+    else if (digitalRead(buttonDownPin) == LOW)
+    {
         menuIndex = (menuIndex + 1) % menuItemCount;
         drawMenu();
         delay(200);
-    } else if (digitalRead(buttonRightPin) == LOW && lastMenuButtonState == HIGH) {
+    }
+    else if (digitalRead(buttonRightPin) == LOW && lastMenuButtonState == HIGH)
+    {
         tft.fillScreen(BLACK);
         delay(200);
-        if (menuIndex == 0) {
+        if (menuIndex == 0)
+        {
             runSnakeGame();
-        } else if (menuIndex == 1) {
+        }
+        else if (menuIndex == 1)
+        {
             runPongGame();
         }
-        
+        else if (menuIndex == 2)
+        {
+            runTetrisGame();
+        }
+
         drawMenu();
     }
     lastMenuButtonState = digitalRead(buttonRightPin);
