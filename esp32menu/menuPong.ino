@@ -166,7 +166,6 @@ void updateBall()
   else if (ballX >= SCREEN_WIDTH)
   {
     leftScore++;    // Left player scores
-    leftScore = leftScore + 10;
     initPongGame(); // Reset ball and paddles
   }
 
