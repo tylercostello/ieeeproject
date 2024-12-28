@@ -19,8 +19,31 @@ int foodX, foodY;  // Food position
 int direction = 2; // 0=up, 1=down, 2=right, 3=left
 int snakeScore = 0;     // Player score
 
+void displayGameOver()
+{
+    tft.fillScreen(BLACK); // Clear the screen
+    tft.setCursor(10, tft.height() / 2 - 10);
+    tft.setTextColor(WHITE);
+    tft.setTextSize(2);
+    tft.println("You Lost!");
+
+    tft.setCursor(40, tft.height() / 2 + 10);
+    tft.setTextSize(1);
+    tft.print("Score: ");
+    tft.print(snakeScore);
+
+    delay(3000); // Wait 3 seconds before restarting
+    initSnakeGame(); // Restart the game
+}
+
 void initSnakeGame()
 {
+    // Clear the screen
+    tft.fillScreen(BLACK);
+
+    // Draw white border
+    tft.drawRect(0, 20, tft.width(), tft.height() - 20, WHITE);
+
     // Initialize snake starting position
     for (int i = 0; i < 100; i++)
     {
@@ -44,10 +67,27 @@ void initSnakeGame()
     drawSnakeScore();
 }
 
+bool isFoodOnSnake(int x, int y)
+{
+    for (int i = 0; i < snakeLength; i++)
+    {
+        if (snakeX[i] == x && snakeY[i] == y)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void spawnFood()
 {
-    foodX = random(0, tft.width() / snakeSize) * snakeSize;
-    foodY = random(20, tft.height() / snakeSize) * snakeSize;
+    const int borderThickness = snakeSize; // Thickness of the white border
+
+    do
+    {
+        foodX = random(borderThickness, tft.width() - borderThickness) / snakeSize * snakeSize;
+        foodY = random(20 + borderThickness, tft.height() - borderThickness) / snakeSize * snakeSize;
+    } while (isFoodOnSnake(foodX, foodY));
 }
 
 void drawSnake()
@@ -89,35 +129,31 @@ void moveSnake()
         break; // Move left
     }
 
-    // Check for wall collision
-    if (snakeX[0] < 0 || snakeX[0] >= tft.width() || snakeY[0] < 20 || snakeY[0] >= tft.height())
+    // Check for wall collision with the border
+    if (snakeX[0] < snakeSize || snakeX[0] >= tft.width() - snakeSize ||
+        snakeY[0] < 20 + snakeSize || snakeY[0] >= tft.height() - snakeSize)
     {
-        initSnakeGame(); // Restart game on collision
+        displayGameOver(); // Display game over message
     }
 }
 
 void buttonMove()
 {
     // Update direction based on button input
-    Serial.println("Checking buttons");
     if (digitalRead(buttonRightPin) == LOW && direction != 3)
     {
-        Serial.println("Right");
         direction = 2; // Move right
     }
     else if (digitalRead(buttonLeftPin) == LOW && direction != 2)
     {
-        Serial.println("Left");
         direction = 3; // Move left
     }
     else if (digitalRead(buttonDownPin) == LOW && direction != 0)
     {
-        Serial.println("Down");
         direction = 1; // Move down
     }
     else if (digitalRead(buttonUpPin) == LOW && direction != 1)
     {
-        Serial.println("Up");
         direction = 0; // Move up
     }
 }
@@ -143,7 +179,7 @@ void checkFoodCollision()
 void drawSnakeScore()
 {
     tft.fillRect(0, 0, tft.width(), 15, BLACK); // Clear score area
-    tft.setCursor(5, 5);
+    tft.setCursor(40, 5);
     tft.setTextColor(SCORE_COLOR);
     tft.setTextSize(1);
     tft.print("Score: ");
@@ -156,8 +192,7 @@ void checkSelfCollision()
     {
         if (snakeX[0] == snakeX[i] && snakeY[0] == snakeY[i])
         {
-            // Restart game on self-collision
-            initSnakeGame();
+            displayGameOver(); // Display game over message
             break;
         }
     }
@@ -168,7 +203,6 @@ void runSnakeGame()
     initSnakeGame(); // Initialize the game state
     while (true)
     {
-
         // Clear previous positions
         for (int i = 0; i < snakeLength; i++)
         {

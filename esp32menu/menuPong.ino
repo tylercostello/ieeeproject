@@ -33,6 +33,7 @@ int rightPaddleX = SCREEN_WIDTH - leftPaddleX - paddleWidth; // Right paddle X p
 // Score
 int leftScore = 0;
 int rightScore = 0;
+const int maxScore = 10; // Maximum score to win the game
 
 // Initialize the ball and paddles
 void initPongGame()
@@ -58,11 +59,9 @@ void drawBall(int x, int y, uint16_t color)
 
 void drawPongScore()
 {
-  // Clear previous score display without affecting the rest of the screen
-  tft.fillRect(70, 5, 50, 10, BLACK);
-
-  tft.setCursor(30, 5);
-  tft.setTextColor(WHITE);
+  tft.fillRect(0, 0, SCREEN_WIDTH, 15, BLACK); // Clear the score area
+  tft.setCursor(25, 5);
+  tft.setTextColor(SCORE_COLOR);
   tft.setTextSize(1);
   tft.print("Score: ");
   tft.print(leftScore);
@@ -70,31 +69,54 @@ void drawPongScore()
   tft.print(rightScore);
 }
 
+// Display the winner and reset the game
+void displayWinnerAndRestart()
+{
+  tft.fillScreen(BLACK); // Clear the screen
+  tft.setTextColor(SCORE_COLOR);
+  tft.setTextSize(2);
+  tft.setCursor(35, 50);
+
+  if (leftScore >= maxScore)
+  {
+    tft.print("Left");
+    tft.setCursor(33, 70);
+    tft.print("Wins!");
+  }
+  else if (rightScore >= maxScore)
+  {
+    tft.print("Right");
+    tft.setCursor(37, 70);
+    tft.print("Wins!");
+  }
+
+  delay(2000); // Pause for 2 seconds
+  tft.fillScreen(BLACK); // Clear the screen
+  leftScore = 0;
+  rightScore = 0;
+  initPongGame(); // Reset the game
+}
+
 // AI for controlling paddles
 void movePaddles()
 {
-
-  // move paddle down if buttondownpin on
-  // else move paddle up if buttonuppin on
   if (digitalRead(buttonDownPin) == LOW)
   {
     leftPaddleY += paddleSpeed;
-    Serial.println("left paddle down");
   }
   else if (digitalRead(buttonUpPin) == LOW)
   {
     leftPaddleY -= paddleSpeed;
-    Serial.println("left paddle up");
   }
 
   // AI for the right paddle (follows the ball with slight random offset)
   if (ballY < rightPaddleY + paddleHeight / 2)
   {
-    rightPaddleY -= paddleSpeed;
+    rightPaddleY -= (paddleSpeed -1);
   }
   else if (ballY > rightPaddleY + paddleHeight / 2)
   {
-    rightPaddleY += paddleSpeed;
+    rightPaddleY += (paddleSpeed-1);
   }
 
   // Prevent paddles from going off-screen
@@ -107,6 +129,7 @@ void movePaddles()
   if (rightPaddleY > SCREEN_HEIGHT - paddleHeight)
     rightPaddleY = SCREEN_HEIGHT - paddleHeight;
 }
+
 void updateBall()
 {
   ballX += ballSpeedX;
@@ -143,7 +166,14 @@ void updateBall()
   else if (ballX >= SCREEN_WIDTH)
   {
     leftScore++;    // Left player scores
+    leftScore = leftScore + 10;
     initPongGame(); // Reset ball and paddles
+  }
+
+  // Check if there's a winner
+  if (leftScore >= maxScore || rightScore >= maxScore)
+  {
+    displayWinnerAndRestart();
   }
 }
 
@@ -166,7 +196,6 @@ void runPongGame()
     drawPaddle(rightPaddleX, rightPaddleY, PADDLE_COLOR);
     drawBall(ballX, ballY, BALL_COLOR);
 
-    // Redraw the score without flickering (since it doesn't change frequently)
     // Exit to menu on button press
     if (digitalRead(buttonMenuPin) == LOW)
     {

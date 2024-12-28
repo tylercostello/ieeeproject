@@ -411,11 +411,18 @@ void checkLines()
 // Function to draw the score
 void drawTetrisScore()
 {
-    tft.fillRect(70, 5, SCREEN_WIDTH, 10, BLACK); // Clear score area
-    tft.setCursor(75, 5);
+    tft.fillRect(65, 5, SCREEN_WIDTH, 10, BLACK); // Clear score area
+    tft.setCursor(70, 5);
     tft.setTextColor(WHITE);
     tft.setTextSize(1);
-    tft.print("Score: ");
+    if (tetrisScore < 10)
+    {
+        tft.print("Score: ");
+    }
+    else
+    {
+        tft.print("Score:");
+    }
     tft.print(tetrisScore);
 }
 
@@ -486,7 +493,7 @@ void runTetrisGame()
         {
             // Game Over screen
             tft.fillScreen(BLACK);
-            tft.setCursor(20, 50);
+            tft.setCursor(5, 50);
             tft.setTextColor(WHITE);
             tft.setTextSize(2);
             tft.print("Game Over!");
