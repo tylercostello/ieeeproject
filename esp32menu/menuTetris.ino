@@ -40,6 +40,10 @@ int prevTetromino[4][4] = {0}; // Previous tetromino shape
 int tetrisScore = 0;
 bool gameOver = false;
 uint16_t currentColor; // Color of the current tetromino
+const int tetrisScores[4] = {40, 100, 300, 1200};
+
+int tetrisDelay = 501;
+int totalLinesCleared = 0;
 
 // Tetromino shapes (I, O, T, L, J, Z, S)
 const int tetrominoShapes[7][4][4] = {
@@ -82,7 +86,8 @@ void drawTetrisScore();
 // Function to initialize the game
 void initTetrisGame()
 {
-    randomSeed(analogRead(0));
+     //use current micros to get a random seed
+    randomSeed(micros());
     // Clear the grid
     for (int y = 0; y < GRID_HEIGHT; y++)
     {
@@ -153,14 +158,14 @@ void drawNextTetromino()
             if (nextTetromino[y][x] == 1)
             {
                 int screenX = 80 + x * BLOCK_SIZE; // Adjust X offset for preview area
-                int screenY = 40 + y * BLOCK_SIZE; // Adjust Y offset for preview area
+                int screenY = 50 + y * BLOCK_SIZE; // Adjust Y offset for preview area
                 tft.fillRect(screenX, screenY, BLOCK_SIZE, BLOCK_SIZE, nextColor);
             }
         }
     }
 
     // Optional: Label the preview area
-    tft.setCursor(80, 20);
+    tft.setCursor(80, 35);
     tft.setTextColor(WHITE);
     tft.setTextSize(1);
     tft.print("Next:");
@@ -354,6 +359,7 @@ void lockTetromino()
 // Function to check and clear full lines
 void checkLines()
 {
+    int linesCleared = 0;
     for (int y = GRID_HEIGHT - 1; y >= 0; y--)
     {
         bool fullLine = true;
@@ -399,30 +405,33 @@ void checkLines()
                 grid[0][x] = 0;
             }
 
-            tetrisScore++;
-            drawTetrisScore();
+
 
             // Check the same line again as lines might have shifted down
+            linesCleared++;
+            totalLinesCleared++;
             y++;
         }
     }
+
+    int level = totalLinesCleared / 10;
+    tetrisScore = tetrisScore + tetrisScores[linesCleared - 1] * (level + 1);
+    tetrisDelay = max(50, 500 - level * 50);
+    drawTetrisScore();
 }
 
 // Function to draw the score
 void drawTetrisScore()
 {
-    tft.fillRect(65, 5, SCREEN_WIDTH, 10, BLACK); // Clear score area
-    tft.setCursor(70, 5);
+    tft.fillRect(65, 5, SCREEN_WIDTH, 30, BLACK); // Clear score area
+    tft.setCursor(80, 5);
     tft.setTextColor(WHITE);
     tft.setTextSize(1);
-    if (tetrisScore < 10)
-    {
-        tft.print("Score: ");
-    }
-    else
-    {
-        tft.print("Score:");
-    }
+
+    tft.print("Score: ");
+    tft.setCursor(80, 15);
+ 
+
     tft.print(tetrisScore);
 }
 
@@ -437,7 +446,7 @@ void runTetrisGame()
             static unsigned long lastUpdateTime = 0;
             unsigned long currentTime = millis();
 
-            if (currentTime - lastUpdateTime >= 500)
+            if (currentTime - lastUpdateTime >= tetrisDelay)
             { // Move down every 500ms
                 moveDown();
                 drawTetrisScore();
@@ -497,8 +506,9 @@ void runTetrisGame()
             tft.setTextColor(WHITE);
             tft.setTextSize(2);
             tft.print("Game Over!");
-            tft.setCursor(20, 70);
+            tft.setCursor(0, 70);
             tft.print("Score: ");
+            tft.setCursor(0, 80);
             tft.print(tetrisScore);
 
             // Wait until any button is pressed to restart
