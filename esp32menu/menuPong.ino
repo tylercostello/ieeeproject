@@ -13,6 +13,7 @@
 
 extern Adafruit_SSD1351 tft; // Use the shared display object from the main menu
 extern const int buttonUpPin, buttonDownPin, buttonLeftPin, buttonRightPin, buttonMenuPin;
+extern void checkPauseMenu(void (*resetGame)(), void (*exitGame)());
 
 // Pong game variables
 int ballX, ballY;   // Ball position
@@ -34,15 +35,56 @@ int rightPaddleX = SCREEN_WIDTH - leftPaddleX - paddleWidth; // Right paddle X p
 int leftScore = 0;
 int rightScore = 0;
 const int maxScore = 10; // Maximum score to win the game
+bool exitGameBoolPong = false;
+
+void pauseDelayPong(int ms)
+{
+    unsigned long start = millis();
+    while (millis() - start < ms)
+    {
+        buttonMove(); 
+        // check for button press to exit
+        if (digitalRead(buttonMenuPin) == LOW)
+        {
+            // call pause menu script here
+            checkPauseMenu(initPongGame, exitGamePong);
+            // extra drawing if needed
+            drawPongScore();
+        }
+    }
+}
+
+void exitGamePong()
+{
+    exitGameBoolPong = true;
+}
 
 // Initialize the ball and paddles
 void initPongGame()
 {
+  tft.fillScreen(BLACK); // Clear the screen
+  exitGameBoolPong = false;
   randomSeed(analogRead(0));
   ballX = SCREEN_WIDTH / 2;
   ballY = SCREEN_HEIGHT / 2;
   leftPaddleY = SCREEN_HEIGHT / 2 - paddleHeight / 2;
   rightPaddleY = SCREEN_HEIGHT / 2 - paddleHeight / 2;
+  leftScore = 0;
+  rightScore = 0;
+  ballSpeedX = 2;
+  ballSpeedY = 0;
+  drawPongScore();
+}
+void nextPoint(int nextPointDirection)
+{
+
+  randomSeed(analogRead(0));
+  ballX = SCREEN_WIDTH / 2;
+  ballY = SCREEN_HEIGHT / 2;
+  leftPaddleY = SCREEN_HEIGHT / 2 - paddleHeight / 2;
+  rightPaddleY = SCREEN_HEIGHT / 2 - paddleHeight / 2;
+  ballSpeedX = nextPointDirection;
+  ballSpeedY = 0;
   drawPongScore();
 }
 
@@ -90,7 +132,7 @@ void displayWinnerAndRestart()
     tft.print("Wins!");
   }
 
-  delay(2000); // Pause for 2 seconds
+  pauseDelayPong(2000); // Pause for 2 seconds
   tft.fillScreen(BLACK); // Clear the screen
   leftScore = 0;
   rightScore = 0;
@@ -161,12 +203,12 @@ void updateBall()
   if (ballX <= 0)
   {
     rightScore++;   // Right player scores
-    initPongGame(); // Reset ball and paddles
+    nextPoint(-2); // Reset ball and paddles
   }
   else if (ballX >= SCREEN_WIDTH)
   {
     leftScore++;    // Left player scores
-    initPongGame(); // Reset ball and paddles
+    nextPoint(2); // Reset ball and paddles
   }
 
   // Check if there's a winner
@@ -179,7 +221,7 @@ void updateBall()
 void runPongGame()
 {
   initPongGame();
-  while (true)
+  while (!exitGameBoolPong)
   {
     // Erase only the previous positions of the ball and paddles
     tft.fillRect(leftPaddleX, leftPaddleY, paddleWidth, paddleHeight, BLACK);
@@ -195,13 +237,9 @@ void runPongGame()
     drawPaddle(rightPaddleX, rightPaddleY, PADDLE_COLOR);
     drawBall(ballX, ballY, BALL_COLOR);
 
-    // Exit to menu on button press
-    if (digitalRead(buttonMenuPin) == LOW)
-    {
-      break;
-    }
+ 
 
-    // Delay to control the frame rate
-    delay(20);
+    // pauseDelayPong to control the frame rate
+    pauseDelayPong(20);
   }
 }

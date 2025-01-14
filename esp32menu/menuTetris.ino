@@ -7,6 +7,7 @@
 
 extern Adafruit_SSD1351 tft; // Use the shared display object from the main menu
 extern const int buttonUpPin, buttonDownPin, buttonLeftPin, buttonRightPin, buttonMenuPin;
+extern void checkPauseMenu(void (*resetGame)(), void (*exitGame)());
 const int buttonRotatePin = buttonUpPin;
 
 #define BLACK 0x0000
@@ -44,6 +45,8 @@ const int tetrisScores[4] = {40, 100, 300, 1200};
 
 int tetrisDelay = 501;
 int totalLinesCleared = 0;
+
+bool exitGameBoolTetris = false;
 
 // Tetromino shapes (I, O, T, L, J, Z, S)
 const int tetrominoShapes[7][4][4] = {
@@ -83,9 +86,34 @@ void lockTetromino();
 void checkLines();
 void drawTetrisScore();
 
+
+
+void pauseDelayTetris(int ms)
+{
+    unsigned long start = millis();
+    while (millis() - start < ms)
+    {
+        // can add button checks here as well
+        // check for button press to exit
+        if (digitalRead(buttonMenuPin) == LOW)
+        {
+            // call pause menu script here
+            checkPauseMenu(initTetrisGame, exitGameTetris);
+            // extra drawing if needed
+            drawNextTetromino();
+        }
+    }
+}
+void exitGameTetris()
+{
+    exitGameBoolTetris = true;
+}
+
+
 // Function to initialize the game
 void initTetrisGame()
 {
+    exitGameBoolTetris = false;
      //use current micros to get a random seed
     randomSeed(micros());
     // Clear the grid
@@ -438,7 +466,7 @@ void drawTetrisScore()
 void runTetrisGame()
 {
     initTetrisGame(); // Initialize the game state
-    while (true)
+    while (!exitGameBoolTetris)
     {
         if (!gameOver)
         {
@@ -496,7 +524,7 @@ void runTetrisGame()
             lastButtonRightState = buttonRightState;
             lastButtonRotateState = buttonRotateState;
             lastButtonDownState = buttonDownState;
-            delay(50);
+            pauseDelayTetris(50);
         }
         else
         {
@@ -508,7 +536,7 @@ void runTetrisGame()
             tft.print("Game Over!");
             tft.setCursor(0, 70);
             tft.print("Score: ");
-            tft.setCursor(0, 80);
+            tft.setCursor(0, 90);
             tft.print(tetrisScore);
 
             // Wait until any button is pressed to restart
@@ -518,17 +546,14 @@ void runTetrisGame()
                 if (digitalRead(buttonLeftPin) == LOW || digitalRead(buttonRightPin) == LOW ||
                     digitalRead(buttonRotatePin) == LOW || digitalRead(buttonDownPin) == LOW)
                 {
-                    delay(200); // Debounce delay to avoid accidental multiple restarts
+                    pauseDelayTetris(200); // Debounce pauseDelayTetris to avoid accidental multiple restarts
                     initTetrisGame();
                     break; // Exit the loop and restart the game
                 }
-                delay(10); // Small delay to prevent excessive CPU usage
+                pauseDelayTetris(10); // Small delay to prevent excessive CPU usage
             }
         }
-        if (digitalRead(buttonMenuPin) == LOW)
-        {
-          break;
-        }
+
     }
 
     
