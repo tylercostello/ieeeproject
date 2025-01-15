@@ -26,6 +26,8 @@ int lastButtonRightState = HIGH;
 int lastButtonRotateState = HIGH;
 int lastButtonDownState = HIGH;
 
+bool lossScreenTetris = false;
+
 // Tetris grid dimensions
 #define GRID_WIDTH 10
 #define GRID_HEIGHT 20
@@ -39,7 +41,7 @@ int prevTetrominoX = 3;                  // Previous tetromino position
 int prevTetrominoY = 0;
 int prevTetromino[4][4] = {0}; // Previous tetromino shape
 int tetrisScore = 0;
-bool gameOver = false;
+bool gameOverTetris = false;
 uint16_t currentColor; // Color of the current tetromino
 const int tetrisScores[4] = {40, 100, 300, 1200};
 
@@ -100,7 +102,23 @@ void pauseDelayTetris(int ms)
             // call pause menu script here
             checkPauseMenu(initTetrisGame, exitGameTetris);
             // extra drawing if needed
-            drawNextTetromino();
+            if (lossScreenTetris)
+            {
+                tft.fillScreen(BLACK);
+                tft.setCursor(5, 50);
+                tft.setTextColor(WHITE);
+                tft.setTextSize(2);
+                tft.print("Game Over!");
+                tft.setCursor(0, 70);
+                tft.print("Score: ");
+                tft.setCursor(0, 90);
+                tft.print(tetrisScore);
+            }
+            else
+            {
+                drawNextTetromino();
+            }
+            
         }
     }
 }
@@ -114,6 +132,7 @@ void exitGameTetris()
 void initTetrisGame()
 {
     exitGameBoolTetris = false;
+    lossScreenTetris = false;
      //use current micros to get a random seed
     randomSeed(micros());
     // Clear the grid
@@ -126,7 +145,7 @@ void initTetrisGame()
     }
 
     tetrisScore = 0;
-    gameOver = false;
+    gameOverTetris = false;
 
     tft.fillScreen(BLACK);
 
@@ -270,7 +289,7 @@ void moveDown()
         spawnTetromino();
         if (checkCollision())
         {
-            gameOver = true;
+            gameOverTetris = true;
         }
     }
 
@@ -468,7 +487,7 @@ void runTetrisGame()
     initTetrisGame(); // Initialize the game state
     while (!exitGameBoolTetris)
     {
-        if (!gameOver)
+        if (!gameOverTetris)
         {
             // Move the tetromino down at regular intervals
             static unsigned long lastUpdateTime = 0;
@@ -528,6 +547,7 @@ void runTetrisGame()
         }
         else
         {
+            lossScreenTetris = true;
             // Game Over screen
             tft.fillScreen(BLACK);
             tft.setCursor(5, 50);
@@ -540,7 +560,7 @@ void runTetrisGame()
             tft.print(tetrisScore);
 
             // Wait until any button is pressed to restart
-            while (true)
+            while (lossScreenTetris)
             {
                 // Check if any button is pressed
                 if (digitalRead(buttonLeftPin) == LOW || digitalRead(buttonRightPin) == LOW ||
@@ -552,6 +572,7 @@ void runTetrisGame()
                 }
                 pauseDelayTetris(10); // Small delay to prevent excessive CPU usage
             }
+            lossScreenTetris = false;
         }
 
     }
