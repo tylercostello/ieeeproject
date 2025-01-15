@@ -124,6 +124,7 @@ void pauseDelayTetris(int ms)
 }
 void exitGameTetris()
 {
+    gameOverTetris = false;
     exitGameBoolTetris = true;
 }
 
@@ -571,7 +572,12 @@ void runTetrisGame()
                     break; // Exit the loop and restart the game
                 }
                 pauseDelayTetris(10); // Small delay to prevent excessive CPU usage
+                if (exitGameBoolTetris)
+                {
+                    break;
+                }
             }
+
             lossScreenTetris = false;
         }
 

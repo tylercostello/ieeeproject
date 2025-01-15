@@ -2,6 +2,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1351.h>
 #include <SPI.h>
+#include <EEPROM.h>
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 128
@@ -57,6 +58,7 @@ void setup()
     pinMode(buttonLeftPin, INPUT_PULLUP);
     pinMode(buttonRightPin, INPUT_PULLUP);
     pinMode(buttonMenuPin, INPUT_PULLUP);
+    EEPROM.begin(512); // Initialize EEPROM with 512 bytes
     Serial.begin(9600);
     tft.begin();
     tft.fillScreen(BLACK);

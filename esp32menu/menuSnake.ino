@@ -1,6 +1,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1351.h>
 #include <SPI.h>
+#include <EEPROM.h>
 
 extern Adafruit_SSD1351 tft; // Use the shared display object from the main menu
 extern const int buttonUpPin, buttonDownPin, buttonLeftPin, buttonRightPin, buttonMenuPin;
@@ -11,6 +12,9 @@ extern void checkPauseMenu(void (*resetGame)(), void (*exitGame)());
 #define SNAKE_COLOR 0x07E0 // Green
 #define FOOD_COLOR 0xF800  // Red
 #define SCORE_COLOR WHITE
+
+const int highScoreAddress = 0; // Starting address in EEPROM
+int highScore = 0; // Variable to store the high score
 
 const int snakeSize = 4;
 int snakeLength = 3;          // Initial snake length
@@ -23,6 +27,7 @@ int snakeScore = 0;     // Player score
 int storedDirection = 2; 
 bool gameOverSnake = false;
 bool exitGameBoolSnake = false;
+
 
 // pause menu delay
 void pauseDelaySnake(int ms)
@@ -39,15 +44,19 @@ void pauseDelaySnake(int ms)
             checkPauseMenu(initSnakeGame, exitGameSnake);
             if (gameOverSnake){
                 tft.fillScreen(BLACK); // Clear the screen
-                tft.setCursor(10, tft.height() / 2 - 10);
+                tft.setCursor(10, tft.height() / 2 - 30);
                 tft.setTextColor(WHITE);
                 tft.setTextSize(2);
-                tft.println("You Lost!");
+                tft.println("Game Over!");
 
-                tft.setCursor(40, tft.height() / 2 + 10);
+                tft.setCursor(10, tft.height() / 2 - 10);
                 tft.setTextSize(1);
                 tft.print("Score: ");
                 tft.print(snakeScore);
+
+                tft.setCursor(10, tft.height() / 2 + 10);
+                tft.print("High Score: ");
+                tft.print(highScore);
             }
             else{
                 tft.drawRect(0, 20, tft.width(), tft.height() - 20, WHITE);
@@ -61,21 +70,39 @@ void pauseDelaySnake(int ms)
 void exitGameSnake()
 {
     exitGameBoolSnake = true;
+    gameOverSnake = false;
 }
 
 void displayGameOver()
 {
     gameOverSnake = true;
     tft.fillScreen(BLACK); // Clear the screen
-    tft.setCursor(10, tft.height() / 2 - 10);
+    tft.setCursor(0, tft.height() / 2 - 30);
     tft.setTextColor(WHITE);
     tft.setTextSize(2);
-    tft.println("You Lost!");
+    tft.println("Game Over!");
 
-    tft.setCursor(40, tft.height() / 2 + 10);
+    tft.setCursor(10, tft.height() / 2 - 10);
     tft.setTextSize(1);
     tft.print("Score: ");
     tft.print(snakeScore);
+
+    tft.setCursor(10, tft.height() / 2 + 10);
+    tft.print("High Score: ");
+    tft.print(highScore);
+
+    // Check if the current score is a new high score
+    if (snakeScore > EEPROM.read(highScoreAddress))
+    {
+        highScore = snakeScore;
+        EEPROM.write(highScoreAddress, highScore); // Save new high score to EEPROM
+        EEPROM.commit(); // Save changes to flash memory
+
+        tft.setCursor(10, tft.height() / 2 + 30);
+        tft.print("New High Score!");
+    }
+
+
     pauseDelaySnake(100); 
     
     while (gameOverSnake) {
@@ -85,12 +112,16 @@ void displayGameOver()
         }
         pauseDelaySnake(10); 
     }
+    if (exitGameBoolSnake){
+        return;
+    }
     gameOverSnake = false;
     initSnakeGame(); // Restart the game
 }
 
 void initSnakeGame()
 {
+    highScore = EEPROM.read(highScoreAddress);
     exitGameBoolSnake = false;
     gameOverSnake = false;
     // Clear the screen
