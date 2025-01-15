@@ -21,7 +21,7 @@ int direction = 2; // 0=up, 1=down, 2=right, 3=left
 int snakeScore = 0;     // Player score
 
 int storedDirection = 2; 
-
+bool gameOverSnake = false;
 bool exitGameBoolSnake = false;
 
 // pause menu delay
@@ -35,8 +35,25 @@ void pauseDelaySnake(int ms)
         if (digitalRead(buttonMenuPin) == LOW)
         {
             // call pause menu script here
+            
             checkPauseMenu(initSnakeGame, exitGameSnake);
-            drawSnakeScore();
+            if (gameOverSnake){
+                tft.fillScreen(BLACK); // Clear the screen
+                tft.setCursor(10, tft.height() / 2 - 10);
+                tft.setTextColor(WHITE);
+                tft.setTextSize(2);
+                tft.println("You Lost!");
+
+                tft.setCursor(40, tft.height() / 2 + 10);
+                tft.setTextSize(1);
+                tft.print("Score: ");
+                tft.print(snakeScore);
+            }
+            else{
+                tft.drawRect(0, 20, tft.width(), tft.height() - 20, WHITE);
+                drawSnakeScore();
+            }
+            
         }
     }
 }
@@ -48,6 +65,7 @@ void exitGameSnake()
 
 void displayGameOver()
 {
+    gameOverSnake = true;
     tft.fillScreen(BLACK); // Clear the screen
     tft.setCursor(10, tft.height() / 2 - 10);
     tft.setTextColor(WHITE);
@@ -58,14 +76,23 @@ void displayGameOver()
     tft.setTextSize(1);
     tft.print("Score: ");
     tft.print(snakeScore);
-
-    pauseDelaySnake(3000); // Wait 3 seconds before restarting
+    pauseDelaySnake(100); 
+    
+    while (gameOverSnake) {
+        // wait until any button is pressed
+        if (digitalRead(buttonUpPin) == LOW || digitalRead(buttonDownPin) == LOW || digitalRead(buttonLeftPin) == LOW || digitalRead(buttonRightPin) == LOW){
+            break;
+        }
+        pauseDelaySnake(10); 
+    }
+    gameOverSnake = false;
     initSnakeGame(); // Restart the game
 }
 
 void initSnakeGame()
 {
     exitGameBoolSnake = false;
+    gameOverSnake = false;
     // Clear the screen
     tft.fillScreen(BLACK);
 
