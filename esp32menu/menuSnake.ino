@@ -13,8 +13,8 @@ extern void checkPauseMenu(void (*resetGame)(), void (*exitGame)());
 #define FOOD_COLOR 0xF800  // Red
 #define SCORE_COLOR WHITE
 
-const int highScoreAddress = 0; // Starting address in EEPROM
-int highScore = 0; // Variable to store the high score
+const int highScoreSnakeAddress = 0; // Starting address in EEPROM
+int highScoreSnake = 0; // Variable to store the high score
 
 const int snakeSize = 4;
 int snakeLength = 3;          // Initial snake length
@@ -43,6 +43,9 @@ void pauseDelaySnake(int ms)
             
             checkPauseMenu(initSnakeGame, exitGameSnake);
             if (gameOverSnake){
+                Serial.begin(115200);
+                Serial.print("Loaded High Score: ");
+                Serial.println(highScoreSnake);
                 tft.fillScreen(BLACK); // Clear the screen
                 tft.setCursor(10, tft.height() / 2 - 30);
                 tft.setTextColor(WHITE);
@@ -56,7 +59,17 @@ void pauseDelaySnake(int ms)
 
                 tft.setCursor(10, tft.height() / 2 + 10);
                 tft.print("High Score: ");
-                tft.print(highScore);
+
+                tft.print(highScoreSnake);
+                if (snakeScore > EEPROM.get(highScoreSnakeAddress, highScoreSnake))
+                {
+                    highScoreSnake = snakeScore;
+                    EEPROM.put(highScoreSnakeAddress, highScoreSnake); // Save new high score to EEPROM
+                    EEPROM.commit(); // Save changes to flash memory
+
+                    tft.setCursor(10, tft.height() / 2 + 30);
+                    tft.print("New High Score!");
+                }
             }
             else{
                 tft.drawRect(0, 20, tft.width(), tft.height() - 20, WHITE);
@@ -69,9 +82,11 @@ void pauseDelaySnake(int ms)
 
 void exitGameSnake()
 {
+    EEPROM.commit();  // Ensure any changes to EEPROM are saved before exiting
     exitGameBoolSnake = true;
     gameOverSnake = false;
 }
+
 
 void displayGameOver()
 {
@@ -89,13 +104,13 @@ void displayGameOver()
 
     tft.setCursor(10, tft.height() / 2 + 10);
     tft.print("High Score: ");
-    tft.print(highScore);
+    tft.print(highScoreSnake);
 
     // Check if the current score is a new high score
-    if (snakeScore > EEPROM.read(highScoreAddress))
+    if (snakeScore > EEPROM.get(highScoreSnakeAddress, highScoreSnake))
     {
-        highScore = snakeScore;
-        EEPROM.write(highScoreAddress, highScore); // Save new high score to EEPROM
+        highScoreSnake = snakeScore;
+        EEPROM.put(highScoreSnakeAddress, highScoreSnake); // Save new high score to EEPROM
         EEPROM.commit(); // Save changes to flash memory
 
         tft.setCursor(10, tft.height() / 2 + 30);
@@ -121,7 +136,7 @@ void displayGameOver()
 
 void initSnakeGame()
 {
-    highScore = EEPROM.read(highScoreAddress);
+    EEPROM.get(highScoreSnakeAddress, highScoreSnake);
     exitGameBoolSnake = false;
     gameOverSnake = false;
     // Clear the screen

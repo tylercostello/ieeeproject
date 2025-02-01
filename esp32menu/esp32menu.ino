@@ -81,6 +81,7 @@ void loop()
     }
     else if (digitalRead(buttonRightPin) == LOW && lastMenuButtonState == HIGH)
     {
+        EEPROM.commit();
         tft.fillScreen(BLACK);
         delay(200);
         if (menuIndex == 0)
