@@ -28,6 +28,9 @@ int storedDirection = 2;
 bool gameOverSnake = false;
 bool exitGameBoolSnake = false;
 
+int newDirection = 2; // 0=up, 1=down, 2=right, 3=left
+
+
 
 // pause menu delay
 void pauseDelaySnake(int ms)
@@ -159,6 +162,8 @@ void initSnakeGame()
     snakeY[2] = snakeY[1];
     snakeLength = 3;
     direction = 2;
+    storedDirection = 2;
+    newDirection = 2;
 
     // Spawn initial food
     spawnFood();
@@ -206,6 +211,8 @@ void drawFood()
 
 void moveSnake()
 {
+    direction = storedDirection; // Apply new direction only at the start of movement
+
     // Shift body
     for (int i = snakeLength - 1; i > 0; i--)
     {
@@ -213,51 +220,60 @@ void moveSnake()
         snakeY[i] = snakeY[i - 1];
     }
 
-    // Update head position based on direction
+    // Move head
     switch (direction)
     {
     case 0:
         snakeY[0] -= snakeSize;
-        break; // Move up
+        break;
     case 1:
         snakeY[0] += snakeSize;
-        break; // Move down
+        break;
     case 2:
         snakeX[0] += snakeSize;
-        break; // Move right
+        break;
     case 3:
         snakeX[0] -= snakeSize;
-        break; // Move left
+        break;
     }
 
-    // Check for wall collision with the border
+    // Check for wall collision
     if (snakeX[0] < snakeSize || snakeX[0] >= tft.width() - snakeSize ||
         snakeY[0] < 20 + snakeSize || snakeY[0] >= tft.height() - snakeSize)
     {
-        displayGameOver(); // Display game over message
+        displayGameOver();
     }
 }
 
 void buttonMove()
 {
-    // Update direction based on button input
+    int newDirection = direction; // Keep the current direction unless a valid change is made
+
     if (digitalRead(buttonRightPin) == LOW && direction != 3)
     {
-        direction = 2; // Move right
+        newDirection = 2; // Move right
     }
     else if (digitalRead(buttonLeftPin) == LOW && direction != 2)
     {
-        direction = 3; // Move left
+        newDirection = 3; // Move left
     }
     else if (digitalRead(buttonDownPin) == LOW && direction != 0)
     {
-        direction = 1; // Move down
+        newDirection = 1; // Move down
     }
     else if (digitalRead(buttonUpPin) == LOW && direction != 1)
     {
-        direction = 0; // Move up
+        newDirection = 0; // Move up
+    }
+
+    // Only update direction if it's different from the current one
+    if (newDirection != direction)
+    {
+        storedDirection = newDirection;
     }
 }
+
+
 
 void checkFoodCollision()
 {
